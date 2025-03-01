@@ -1,1 +1,0 @@
-import{_ as e,c as t,o as r,ae as o}from"./chunks/framework.DRC4R4Ij.js";const P=JSON.parse('{"title":"网络协议","description":"","frontmatter":{},"headers":[],"relativePath":"网络协议.md","filePath":"网络协议.md"}'),h={name:"网络协议.md"};function l(i,a,n,s,d,c){return r(),t("div",null,a[0]||(a[0]=[o("",13)]))}const b=e(h,[["render",l]]);export{P as __pageData,b as default};
