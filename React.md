@@ -52,3 +52,16 @@ Vue3 相比 Vue2 在双向绑定的实现上进行了优化，核心的变化是
 ![vue3_lifecycle](./static/vue3_lifecycle.png)
 
 ## Vue3.0 有什么更新
+
+## React 性能优化
+
+两个优化方向，避免一次性渲染大量 DOM 节点，避免长时间占用 JS 线程
+
+- 减少重渲染的次数
+- 虚拟列表
+
+## 前端路由的实现原理
+
+- Hash 模式，hash 变化不会触发页面刷新，可以使用 window.onhashchange 监听 hash 变化并切换页面。
+- History 模式，使用 history.pushState() 或 history.replaceState() 修改 URL，不刷新页面。监听 popstate 事件，来处理前进/后退操作
+- 内存路由（Memory Router） 是一种 不依赖 URL 变化的路由方式，所有的路由信息都存储在 内存（JavaScript 变量） 中。这种方式通常用于 非浏览器环境，无法支持浏览器前进/后退按钮
