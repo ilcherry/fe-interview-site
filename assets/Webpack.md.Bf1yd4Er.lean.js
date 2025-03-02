@@ -1,0 +1,1 @@
+import{_ as e,c as t,o as r,ae as o}from"./chunks/framework.DRC4R4Ij.js";const b=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"Webpack.md","filePath":"Webpack.md"}'),c={name:"Webpack.md"};function i(h,a,n,l,s,p){return r(),t("div",null,a[0]||(a[0]=[o("",6)]))}const k=e(c,[["render",i]]);export{b as __pageData,k as default};
