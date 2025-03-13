@@ -18,6 +18,10 @@ export default defineConfig({
         link: "/JS 理论基础",
       },
       {
+        text: "TypeScript",
+        link: "/TypeScript",
+      },
+      {
         text: "前端工程化",
         items: [
           { text: "React&Vue", link: "/React" },
