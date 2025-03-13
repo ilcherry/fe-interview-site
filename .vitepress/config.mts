@@ -3,14 +3,22 @@ import { defineConfig } from "vitepress";
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: "/fe-interview-site/",
-  title: "fe interview",
-  description: "A VitePress Site",
+  title: "前端面试总结",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       // { text: "Home", link: "/" },
       // { text: "Examples", link: "/markdown-examples" },
     ],
+
+    docFooter: {
+      prev: "上一页",
+      next: "下一页",
+    },
+
+    outline: {
+      label: "章节目录",
+    },
 
     sidebar: [
       {
@@ -43,6 +51,8 @@ export default defineConfig({
       },
     ],
 
-    socialLinks: [{ icon: "github", link: "https://github.com/" }],
+    socialLinks: [
+      { icon: "github", link: "https://github.com/ilcherry/fe-interview-site" },
+    ],
   },
 });
