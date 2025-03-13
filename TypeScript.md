@@ -32,7 +32,6 @@ TypeScript（简称 **TS**）是 **JavaScript 的超集**，它在 JavaScript �
 
 有 `number`、`string`、`boolean`、`bigint`、`symbol`、`null`、`undefined`、`Array`、`Tuple`、`Object`、`Enum`、`any`、`unknown`、`void`、`never`、联合类型、交叉类型、类型别名、类型断言、`interface`、`type`
 
-
 ## 说说对 TypeScript 中命名空间与模块的理解？区别？
 
 ### 命名空间
@@ -141,30 +140,31 @@ TypeScript 支持的三种访问修饰符：
 
 tsconfig.json 是 TypeScript 项目的配置文件，用于指定编译选项、文件路径等，控制 TypeScript 代码的编译方式。
 
-
 1. 集中管理 TypeScript 编译配置
 2. 提供严格的类型检查
 3. 支持 ES 模块、目标版本、路径别名等
 4. 提高项目可维护性
 5. 支持增量编译、跳过不必要的编译
 
-## TypeScript 中的 Delcare的关键字有什么作用？
+## TypeScript 中的 Delcare 的关键字有什么作用？
 
 在 TypeScript 中，`declare` 关键字用于**声明全局变量、模块、函数、类等**，但不会在编译后生成 JavaScript 代码。它的主要作用是**告诉 TypeScript 这些变量或模块是外部提供的，自己不会实现**。
 
 ---
 
 ### **1. `declare` 的主要用途**
-| **用途** | **作用** |
-|---------|---------|
-| **声明全局变量** | 告诉 TypeScript 某个全局变量已存在，但不提供具体实现 |
-| **声明全局函数** | 告诉 TypeScript 某个全局函数已存在，但不提供实现 |
-| **声明模块** | 适用于引入 **非 TypeScript** 的第三方库（如 `.js`） |
-| **声明类型（类型定义文件）** | 在 `*.d.ts` 文件中使用 `declare` 进行类型定义 |
+
+| **用途**                     | **作用**                                             |
+| ---------------------------- | ---------------------------------------------------- |
+| **声明全局变量**             | 告诉 TypeScript 某个全局变量已存在，但不提供具体实现 |
+| **声明全局函数**             | 告诉 TypeScript 某个全局函数已存在，但不提供实现     |
+| **声明模块**                 | 适用于引入 **非 TypeScript** 的第三方库（如 `.js`）  |
+| **声明类型（类型定义文件）** | 在 `*.d.ts` 文件中使用 `declare` 进行类型定义        |
 
 ---
 
 ### **2. `declare` 声明全局变量**
+
 如果你在 JavaScript 代码中引入了一个**没有 TypeScript 类型定义**的全局变量（比如来自 CDN），TypeScript 默认会报错：
 
 ```js
@@ -172,27 +172,34 @@ console.log(window.globalVar); // globalVar 是一个在 JS 里定义的全局�
 ```
 
 TypeScript 会提示：
+
 ```
 Cannot find name 'globalVar'.
 ```
 
 ### **✅ 使用 `declare` 解决**
+
 在 `.d.ts` 文件或 `ts` 文件中：
+
 ```typescript
 declare var globalVar: string;
 console.log(globalVar); // ✅ 不会报错
 ```
+
 `declare` 只是**声明**，不生成 JavaScript 代码。
 
 ---
 
 ### **3. `declare` 声明全局函数**
+
 假设你使用一个**全局函数**，但 TypeScript 不认识它：
+
 ```typescript
 externalFunction(); // ❌ 报错：Cannot find name 'externalFunction'
 ```
 
 ### **✅ 使用 `declare` 解决**
+
 ```typescript
 declare function externalFunction(): void;
 externalFunction(); // ✅ 不报错
@@ -201,7 +208,9 @@ externalFunction(); // ✅ 不报错
 ---
 
 ### **4. `declare` 声明全局对象**
+
 如果有一个全局对象，包含多个属性：
+
 ```typescript
 declare const API: {
   baseUrl: string;
@@ -210,57 +219,71 @@ declare const API: {
 
 console.log(API.baseUrl);
 ```
+
 这样 TypeScript 知道 `API` 存在，并能提供类型提示。
 
 ---
 
 ### **5. `declare` 声明模块**
+
 如果我们使用 `import` 导入一个**没有 TypeScript 类型的 JavaScript 模块**：
+
 ```typescript
 import { someFunction } from "myLibrary";
 ```
+
 如果 `myLibrary` 没有 `.d.ts` 类型定义文件，TypeScript 会报错：
+
 ```
 Cannot find module 'myLibrary'.
 ```
 
 ### **✅ 使用 `declare module` 解决**
+
 在 `myLibrary.d.ts` 中：
+
 ```typescript
 declare module "myLibrary" {
   export function someFunction(): void;
 }
 ```
+
 这样就可以正常使用 `import` 了。
 
 ---
 
 ### **6. `declare` 在 `*.d.ts` 类型定义文件中**
+
 通常，`declare` 关键字用于 `.d.ts`（声明文件），帮助 TypeScript 识别外部库的类型。
 
 例如：
+
 ```typescript
 // typings.d.ts
 declare module "moment" {
   export function format(date: string): string;
 }
 ```
+
 这样，在 TypeScript 代码中：
+
 ```typescript
 import { format } from "moment";
 format("2025-03-13");
 ```
+
 不会报错。
 
 ---
 
 ### **7. `declare` VS `export`**
+
 如果你想要**真正定义**一个变量、函数或类，需要使用 `export` 而不是 `declare`：
 
-| 关键字 | 作用 |
-|--------|-----|
+| 关键字    | 作用                             |
+| --------- | -------------------------------- |
 | `declare` | 只是**声明**，不会编译成 JS 代码 |
-| `export` | 真实导出，编译后仍然存在 |
+| `export`  | 真实导出，编译后仍然存在         |
 
 ```typescript
 declare var a: number; // 只告诉 TS "a 存在"
@@ -270,9 +293,79 @@ export const b = 10; // 真实存在于编译后的 JS 代码中
 ---
 
 ### **8. 总结**
+
 ✅ `declare` 关键字用于：
+
 1. **声明全局变量**（`declare var` / `declare let` / `declare const`）
 2. **声明全局函数**（`declare function`）
 3. **声明模块**（`declare module`）
 4. **用于 `.d.ts` 类型定义文件**
 5. **不会在编译后生成 JavaScript 代码**
+
+## TypeScript 的映射文件是什么？
+
+TypeScript 的映射文件（Source Map，.map 文件）是一种**调试工具**，用于将**编译后的 JavaScript 代码**映射回 **TypeScript 源代码**，方便在浏览器开发工具中调试。
+
+## 什么是类型断言
+
+类型断言允许程序员手动指定一个值的类型。这在需要明确告诉编译器某个值的类型时非常有用。
+
+```typescript
+let someValue: any = "this is a string";
+let strLength: number = (someValue as string).length;
+```
+
+## 类型守卫（Type Guards）是什么
+
+类型守卫是一种用于在运行时检查类型的技术，它允许开发人员在特定的作用域内缩小变量的范围，以确保正确推断类型。
+
+```typescript
+function isString(test: any): test is string {
+  return typeof test === "string";
+}
+if (isString(input)) {
+  // input 在此代码块中被收窄为 string 类型
+}
+```
+
+## 什么是联合类型和交叉类型
+
+联合类型表示一个值可以是多种类型中的一种，而交叉类型表示一个新类型，它包含了多个类型的特性。
+
+- 联合类型示例：
+
+```typescript
+let myVar: string | number;
+myVar = "Hello"; // 合法
+myVar = 123; // 合法
+```
+
+- 交叉类型示例：
+
+```typescript
+interface A {
+  a(): void;
+}
+interface B {
+  b(): void;
+}
+type C = A & B; // 表示同时具备 A 和 B 的特性
+```
+
+## 什么是 TypeScript 中的声明文件
+
+声明文件（通常以 `.d.ts` 扩展名结尾）用于描述已有 JavaScript 代码库的类型信息。它们提供了类型定义和元数据，以便在 TypeScript 项目中使用这些库时获得智能感知和类型安全。
+
+## keyof 和 typeof 关键字的作用？
+
+- keyof 索引类型查询操作符 获取索引类型的属性名，构成联合类型。
+- typeof 获取一个变量或对象的类型。
+
+## 简述工具类型 Exclude、Omit、Merge、Intersection、Overwrite 的作用。
+
+- Exclude<T, U> 从 T 中排除出可分配给 U 的元素。
+- Omit<T, K> 的作用是忽略 T 中的某些属性。
+- Merge<O1, O2> 是将两个对象的属性合并。
+- Compute<A & B> 是将交叉类型合并
+- Intersection<T, U>的作用是取 T 的属性,此属性同样也存在与 U。
+- Overwrite<T, U> 是用 U 的属性覆盖 T 的相同属性。
