@@ -136,3 +136,143 @@ TypeScript 支持的三种访问修饰符：
 | `public`（默认） | 任何地方都可以访问 |
 | `private` | 只能在类的**内部**访问 |
 | `protected` | 只能在类的**内部**或**子类**访问 |
+
+## tsconfig.json 文件有什么作用
+
+tsconfig.json 是 TypeScript 项目的配置文件，用于指定编译选项、文件路径等，控制 TypeScript 代码的编译方式。
+
+
+1. 集中管理 TypeScript 编译配置
+2. 提供严格的类型检查
+3. 支持 ES 模块、目标版本、路径别名等
+4. 提高项目可维护性
+5. 支持增量编译、跳过不必要的编译
+
+## TypeScript 中的 Delcare的关键字有什么作用？
+
+在 TypeScript 中，`declare` 关键字用于**声明全局变量、模块、函数、类等**，但不会在编译后生成 JavaScript 代码。它的主要作用是**告诉 TypeScript 这些变量或模块是外部提供的，自己不会实现**。
+
+---
+
+### **1. `declare` 的主要用途**
+| **用途** | **作用** |
+|---------|---------|
+| **声明全局变量** | 告诉 TypeScript 某个全局变量已存在，但不提供具体实现 |
+| **声明全局函数** | 告诉 TypeScript 某个全局函数已存在，但不提供实现 |
+| **声明模块** | 适用于引入 **非 TypeScript** 的第三方库（如 `.js`） |
+| **声明类型（类型定义文件）** | 在 `*.d.ts` 文件中使用 `declare` 进行类型定义 |
+
+---
+
+### **2. `declare` 声明全局变量**
+如果你在 JavaScript 代码中引入了一个**没有 TypeScript 类型定义**的全局变量（比如来自 CDN），TypeScript 默认会报错：
+
+```js
+console.log(window.globalVar); // globalVar 是一个在 JS 里定义的全局变量
+```
+
+TypeScript 会提示：
+```
+Cannot find name 'globalVar'.
+```
+
+### **✅ 使用 `declare` 解决**
+在 `.d.ts` 文件或 `ts` 文件中：
+```typescript
+declare var globalVar: string;
+console.log(globalVar); // ✅ 不会报错
+```
+`declare` 只是**声明**，不生成 JavaScript 代码。
+
+---
+
+### **3. `declare` 声明全局函数**
+假设你使用一个**全局函数**，但 TypeScript 不认识它：
+```typescript
+externalFunction(); // ❌ 报错：Cannot find name 'externalFunction'
+```
+
+### **✅ 使用 `declare` 解决**
+```typescript
+declare function externalFunction(): void;
+externalFunction(); // ✅ 不报错
+```
+
+---
+
+### **4. `declare` 声明全局对象**
+如果有一个全局对象，包含多个属性：
+```typescript
+declare const API: {
+  baseUrl: string;
+  version: number;
+};
+
+console.log(API.baseUrl);
+```
+这样 TypeScript 知道 `API` 存在，并能提供类型提示。
+
+---
+
+### **5. `declare` 声明模块**
+如果我们使用 `import` 导入一个**没有 TypeScript 类型的 JavaScript 模块**：
+```typescript
+import { someFunction } from "myLibrary";
+```
+如果 `myLibrary` 没有 `.d.ts` 类型定义文件，TypeScript 会报错：
+```
+Cannot find module 'myLibrary'.
+```
+
+### **✅ 使用 `declare module` 解决**
+在 `myLibrary.d.ts` 中：
+```typescript
+declare module "myLibrary" {
+  export function someFunction(): void;
+}
+```
+这样就可以正常使用 `import` 了。
+
+---
+
+### **6. `declare` 在 `*.d.ts` 类型定义文件中**
+通常，`declare` 关键字用于 `.d.ts`（声明文件），帮助 TypeScript 识别外部库的类型。
+
+例如：
+```typescript
+// typings.d.ts
+declare module "moment" {
+  export function format(date: string): string;
+}
+```
+这样，在 TypeScript 代码中：
+```typescript
+import { format } from "moment";
+format("2025-03-13");
+```
+不会报错。
+
+---
+
+### **7. `declare` VS `export`**
+如果你想要**真正定义**一个变量、函数或类，需要使用 `export` 而不是 `declare`：
+
+| 关键字 | 作用 |
+|--------|-----|
+| `declare` | 只是**声明**，不会编译成 JS 代码 |
+| `export` | 真实导出，编译后仍然存在 |
+
+```typescript
+declare var a: number; // 只告诉 TS "a 存在"
+export const b = 10; // 真实存在于编译后的 JS 代码中
+```
+
+---
+
+### **8. 总结**
+✅ `declare` 关键字用于：
+1. **声明全局变量**（`declare var` / `declare let` / `declare const`）
+2. **声明全局函数**（`declare function`）
+3. **声明模块**（`declare module`）
+4. **用于 `.d.ts` 类型定义文件**
+5. **不会在编译后生成 JavaScript 代码**
