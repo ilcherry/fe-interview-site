@@ -22,6 +22,32 @@ ES6 引入 class 语法，它是基于原型的语法糖，提供更清晰的面
 - 生成器（Generator） 允许函数暂停和恢复执行，结合 yield 和 next() 可以逐步执行异步操作，让异步代码更像同步代码
 - async/await 是基于 Promise 的语法糖，提供最接近同步代码的异步处理方式，避免 then() 链式调用，使代码更清晰
 
+## Promise
+
+在 JavaScript 中，Promise 对象表示一个异步操作，它有 三种状态：
+
+1. Pending → Fulfilled（调用 resolve(value)）
+2. Pending → Rejected（调用 reject(error)）
+3. Fulfilled / Rejected 状态一旦确定，就不可再更改！
+
+Promise 是 JavaScript 处理异步操作的对象，它提供了多个方法来创建、控制和管理异步流程。主要包括以下 7 个方法：
+
+## **📌 Promise 的常用方法**
+
+`Promise` 是 JavaScript 处理异步操作的对象，它提供了多个方法来创建、控制和管理异步流程。主要包括以下 **7 个方法**：
+
+| **方法**                       | **作用**                            | **返回时机**      |
+| ------------------------------ | ----------------------------------- | ----------------- |
+| `Promise.resolve(value)`       | 创建已成功的 Promise                | 立即              |
+| `Promise.reject(error)`        | 创建已失败的 Promise                | 立即              |
+| `Promise.all([p1, p2])`        | 等待全部成功，失败则返回错误        | 所有 Promise 结束 |
+| `Promise.allSettled([p1, p2])` | 返回所有 Promise 的状态和结果       | 所有 Promise 结束 |
+| `Promise.race([p1, p2])`       | 返回**最先执行完成**的 Promise 结果 | 第一个完成        |
+| `Promise.any([p1, p2])`        | 返回**第一个成功**的结果            | 第一个成功        |
+| `then()`                       | 处理成功结果                        | 成功后            |
+| `catch()`                      | 处理失败结果                        | 失败后            |
+| `finally()`                    | 无论成功或失败都会执行              | 结束后            |
+
 ## CommonJS VS ESM
 
 | 对比项                         | **CommonJS (CJS)**                    | **ES Modules (ESM)**              |
