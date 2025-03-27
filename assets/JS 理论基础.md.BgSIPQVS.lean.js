@@ -1,1 +1,0 @@
-import{_ as e,c as a,o,ae as r}from"./chunks/framework.DRC4R4Ij.js";const m=JSON.parse('{"title":"下面是与原生 JS 有关的知识点汇总","description":"","frontmatter":{},"headers":[],"relativePath":"JS 理论基础.md","filePath":"JS 理论基础.md"}'),d={name:"JS 理论基础.md"};function s(l,t,i,n,c,p){return o(),a("div",null,t[0]||(t[0]=[r("",37)]))}const u=e(d,[["render",s]]);export{m as __pageData,u as default};
