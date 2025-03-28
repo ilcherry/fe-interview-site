@@ -20,7 +20,7 @@ ES6 引入 class 语法，它是基于原型的语法糖，提供更清晰的面
 - 事件监听（Event Listener） 允许通过 addEventListener 监听事件，如 click、load、error 等
 - Promise 是 ES6 引入的异步解决方案，提供 .then() 和 .catch() 方法，使代码更具可读性，并避免 回调地狱（Callback Hell）
 - 生成器（Generator） 允许函数暂停和恢复执行，结合 yield 和 next() 可以逐步执行异步操作，让异步代码更像同步代码
-- async/await 是基于 Promise 的语法糖，提供最接近同步代码的异步处理方式，避免 then() 链式调用，使代码更清晰
+- async/await 是基于 Promise 的语法糖，提供最接近同步代码的异步处理方式，避免 then() 链式调用，使更清晰
 
 ## Promise
 

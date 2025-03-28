@@ -65,3 +65,47 @@ Vue3 相比 Vue2 在双向绑定的实现上进行了优化，核心的变化是
 - Hash 模式，hash 变化不会触发页面刷新，可以使用 window.onhashchange 监听 hash 变化并切换页面。
 - History 模式，使用 history.pushState() 或 history.replaceState() 修改 URL，不刷新页面。监听 popstate 事件，来处理前进/后退操作
 - 内存路由（Memory Router） 是一种 不依赖 URL 变化的路由方式，所有的路由信息都存储在 内存（JavaScript 变量） 中。这种方式通常用于 非浏览器环境，无法支持浏览器前进/后退按钮
+
+## computed 与 watch 的区别
+
+computed 是计算属性，依赖响应式数据，只有依赖的数据发生变化时才会重新计算。如果依赖数据未改变，则不会重新执行函数，直接返回上次的计算结果。
+
+watch 是侦听器，监听一个或多个响应式数据，在其发生变化时执行回调函数。没有缓存，每次数据变化都会执行回调。适用于监听数据变化并执行异步操作（如请求 API、手动更新 DOM）。
+
+## 路由懒加载的实现原理
+
+ES6 支持动态 import。import() 返回一个 Promise，当路由匹配时执行 import 方法加载组件，整体效果时按需加载
+
+在 React 中的搭配 Suspense 组件，让代码看起来更优雅
+
+## Webpack 在检测到导入时怎样实现异步加载
+
+webpack 将模块打包成 chunk 文件，不会立即加载模块源文件，而是返回 promise,等代码执行时才去下载该 chunk
+
+## requestAnimationFrame 怎么使用
+
+requestAnimationFrame 是 浏览器提供的 API，用于优化动画渲染，让动画更流畅、减少资源消耗。它适用于平滑动画，
+
+适用场景：
+
+- canvas 动画
+- CSS 动画增强
+- DOM 元素移动
+- 游戏帧渲染
+
+```js
+function animate() {
+  console.log("动画执行");
+  requestAnimationFrame(animate); // 递归调用，实现动画循环
+}
+
+requestAnimationFrame(animate);
+```
+
+相比 setInterval 优势: 不会卡顿，能匹配屏幕刷新率。不会阻塞主线程，动画更流畅。
+
+## vue 中实现 diff 算法的关键是什么？
+
+Vue 采用 双端 Diff（双指针），加速相同节点的查找，比 React 的单向 Diff 更高效。采用 最长递增子序列（LIS）：减少 DOM 移动，提高效率。Fragment & Static Tree Hoisting：减少 Diff 操作，提高渲染速度。
+
+一句话总结：Vue 通过 sameVNode 判断相同节点，结合双端 Diff 和 LIS 进行高效更新，避免不必要的 DOM 变化！
