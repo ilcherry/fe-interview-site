@@ -4,13 +4,13 @@
 
 **JS 作用域**是词法作用域，指变量的访问范围。主要分为块作用域、函数作用域、模块作用域和全局作用域
 
-当 JavaScript 代码需要访问某个变量时,按照嵌套关系从内向外查找变量，直到找到该变量或者到达全局作用域。如果在所有作用域中都找不到变量，则会抛出 ReferenceError
+当 JavaScript 代码需要访问某个变量时,按照嵌套关系从内向外查找变量，直到找到该变量或者到达全局作用域。如果在所有作用域中都找不到变量，则会抛出 ReferenceError（函数嵌套）
 
-在 JS 中函数是一等公民，当函数返回函数的时候就形成**闭包**
+在JS中函数是一等公民和函数可以返回函数，当函数返回函数的时候就形成**闭包**，闭包的缺点是1.不合理的使用导致性能开销大2.内存泄露3.闭包代码维护难度变大
 
 ## 类与继承和原型链
 
-在 JavaScript 中，每个对象都有一个原型，这个原型也是一个对象，并且它可以继续拥有自己的原型，形成**原型链**,原型链是 JavaScript 继承的核心机制。如果一个对象本身没有某个属性或方法，JavaScript 会沿着原型链向上查找，直到 null
+在 JavaScript 中，每个对象都有一个原型__proto__ ，这个原型指向的也是一个对象，并且它可以继续拥有自己的原型，形成**原型链**,原型链是 JavaScript 继承的核心机制。如果一个对象本身没有某个属性或方法，JavaScript 会沿着原型链向上查找，直到 null
 
 ES6 引入 class 语法，它是基于原型的语法糖，提供更清晰的面向对象写法。class 只是 prototype 的语法糖，本质上仍然基于原型继承
 
@@ -66,7 +66,7 @@ Promise 是 JavaScript 处理异步操作的对象，它提供了多个方法来
 
 ### 在浏览器中，异步任务分为两类：
 
-- **宏任务（Macrotask）**：Script 脚本、定时器、requestAnimationFrame、网络请求、事件监听、setImmediate、pushState h 和 replaceState 等等
+- **宏任务（Macrotask）**：Script 脚本、定时器、requestAnimationFrame、网络请求、事件监听、setImmediate、pushState和replaceState、IO处理等等
 
 - **微任务（Microtask）**：Promise、MutationObserver 和 queueMicrotask 等等
 
