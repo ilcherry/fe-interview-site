@@ -4,9 +4,13 @@ Virtual DOM 是对实际 DOM 的一种轻量级抽象。它是一个 JavaScript 
 
 ## React 组件之间如何通信？
 
-- 父组件通过 props 向子组件传递状态
-- 子组件通过回调方法更新父组件的状态
-- 兄弟组件通过状态提升到最近的共同父组件或者状态管理工具通信
+- 父组件向子组件通信 (Props)
+- 子组件向父组件通信 (Callback)
+- 状态提升解决兄弟组件通信
+- 跨组件层级通信 (Context API)
+- 全局状态管理 (External Store)
+- 发布/订阅模式 (Pub/Sub)
+- 全局变量
 
 ## 详解 React Hooks 的生命周期
 
