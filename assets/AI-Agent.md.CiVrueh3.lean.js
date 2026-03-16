@@ -1,0 +1,1 @@
+import{_ as i,c as a,o as l,ae as n}from"./chunks/framework.DRC4R4Ij.js";const o=JSON.parse('{"title":"二、核心区别","description":"","frontmatter":{},"headers":[],"relativePath":"AI-Agent.md","filePath":"AI-Agent.md"}'),h={name:"AI-Agent.md"};function t(e,s,p,k,r,d){return l(),a("div",null,s[0]||(s[0]=[n("",1082)]))}const g=i(h,[["render",t]]);export{o as __pageData,g as default};
