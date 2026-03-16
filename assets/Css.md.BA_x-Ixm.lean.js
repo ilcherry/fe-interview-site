@@ -1,0 +1,1 @@
+import{_ as i,c as l,o as e,ae as t}from"./chunks/framework.DRC4R4Ij.js";const f=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"Css.md","filePath":"Css.md"}'),o={name:"Css.md"};function r(n,a,s,d,h,p){return e(),l("div",null,a[0]||(a[0]=[t("",25)]))}const u=i(o,[["render",r]]);export{f as __pageData,u as default};
