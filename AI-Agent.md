@@ -3382,3 +3382,566 @@ AI 常见失败不是报错，而是“假装成功”。
 * 它允许我快速修正它
 * 它不会在高风险场景里乱执行
 
+---
+
+## 在 React 中渲染长达数万字的 AI 回复 时，如何保证页面的流畅度？
+
+在 React 里渲染**长达数万字、还在持续流式增长的 AI 回复**，性能问题通常不在“字多”，而在这几件事：
+
+1. **更新太频繁**
+2. **每次更新都让整棵消息树重渲染**
+3. **Markdown 解析 / 代码高亮太重**
+4. **DOM 节点太多**
+5. **滚动和布局抖动**
+
+要想页面流畅，核心思路是：
+
+**“减少更新次数 + 缩小重渲染范围 + 延迟重活 + 控制 DOM 数量”**
+
+---
+
+## 一、先明确卡顿来源
+
+AI 回复场景里最常见的卡顿链路是：
+
+`token流 -> setState -> React re-render -> markdown重新解析 -> code block重新高亮 -> DOM更新 -> 自动滚动 -> 页面卡`
+
+所以不要一来就优化 React 语法，先盯住这几个高频瓶颈：
+
+* token 每来一个就 `setState`
+* 父组件 state 变了，整个聊天列表都重渲染
+* `react-markdown` 每次都全量重新 parse
+* 代码块高亮在流式阶段频繁执行
+* 一边追加内容一边强制 `scrollToBottom`
+* 历史消息太多，DOM 累积过大
+
+---
+
+## 二、最重要的一条：不要每个 token 都触发 React 渲染
+
+### 错误做法
+
+```tsx
+onToken((token) => {
+  setContent((prev) => prev + token)
+})
+```
+
+这样会导致：
+
+* 更新频率极高
+* React 不断 re-render
+* Markdown 反复全量解析
+
+### 更好的做法：缓冲 + 批量刷新
+
+把 token 先放到 buffer 里，按时间片批量刷到 UI，比如 30ms~100ms 一次。
+
+```tsx
+import { useEffect, useRef, useState } from "react";
+
+export function useStreamText() {
+  const [content, setContent] = useState("");
+  const bufferRef = useRef("");
+  const timerRef = useRef<number | null>(null);
+
+  const appendToken = (token: string) => {
+    bufferRef.current += token;
+
+    if (timerRef.current !== null) return;
+
+    timerRef.current = window.setTimeout(() => {
+      const chunk = bufferRef.current;
+      bufferRef.current = "";
+      timerRef.current = null;
+
+      setContent((prev) => prev + chunk);
+    }, 50); // 50ms 左右通常比较平衡
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  return { content, appendToken, setContent };
+}
+```
+
+### 这样做的好处
+
+* 1 秒几十次更新，而不是几百上千次
+* 用户几乎感知不到差别
+* React 渲染压力会立刻下降很多
+
+---
+
+## 三、让“正在流式输出的那条消息”单独更新
+
+不要把整个聊天列表都绑在同一个大 state 上。
+
+### 错误结构
+
+```tsx
+<ChatPage>
+  {messages.map(msg => <MessageItem ... />)}
+</ChatPage>
+```
+
+如果 `messages` 每次都整体替换，那么整个列表里的每一项都可能重新 render。
+
+### 更好的思路
+
+把消息拆成：
+
+* 历史消息：基本静态
+* 当前流式消息：高频更新
+
+```tsx
+function ChatPage() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [streamingText, setStreamingText] = useState("");
+
+  return (
+    <div>
+      <MessageList messages={messages} />
+      <StreamingMessage content={streamingText} />
+    </div>
+  );
+}
+```
+
+再配合 `React.memo`：
+
+```tsx
+const MessageList = React.memo(function MessageList({ messages }: { messages: Message[] }) {
+  return (
+    <>
+      {messages.map((msg) => (
+        <MessageItem key={msg.id} message={msg} />
+      ))}
+    </>
+  );
+});
+
+const MessageItem = React.memo(function MessageItem({ message }: { message: Message }) {
+  return <div>{message.content}</div>;
+});
+```
+
+### 原则
+
+**高频变化的数据，尽量只影响一个很小的组件。**
+
+---
+
+## 四、Markdown 解析不要在每次小更新时全量重跑
+
+这是 AI 聊天里最容易被忽略的大头。
+
+因为几万字文本一旦交给 Markdown 解析器，每次重新 parse 都很重，尤其还有：
+
+* 表格
+* 列表
+* 引用
+* 数学公式
+* 代码块
+* 语法高亮
+
+### 优化策略 1：流式阶段先用纯文本/轻解析
+
+在消息还没结束时，不要立刻做完整 Markdown 渲染。
+
+可以分两阶段：
+
+* **流式中**：轻量渲染
+* **流式结束**：完整 Markdown + 高亮
+
+```tsx
+function AIMessage({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+  if (isStreaming) {
+    return <pre style={{ whiteSpace: "pre-wrap" }}>{content}</pre>;
+  }
+
+  return <MarkdownRenderer content={content} />;
+}
+```
+
+这个优化非常有效。
+
+因为用户在“生成中”最关心的是内容持续出现，不是每一段都被完美 markdown 化。
+
+---
+
+### 优化策略 2：分块渲染
+
+把长文本拆成稳定块，例如：
+
+* 普通段落块
+* 代码块
+* 表格块
+
+只有最后一个块在变化，前面的块保持不动。
+
+思路类似：
+
+```tsx
+type Block = {
+  id: string;
+  type: "paragraph" | "code";
+  content: string;
+};
+```
+
+当流式内容持续到来时：
+
+* 已经闭合完成的块，冻结
+* 仅更新最后一个未完成块
+
+这样比“整篇 markdown 每次重算”轻很多。
+
+---
+
+## 五、代码高亮要延迟，不要边流式边高亮
+
+代码高亮很耗性能，尤其长代码块。
+
+### 不建议
+
+* token 一来就 `highlight.js` / `prism` 全量高亮
+
+### 建议
+
+1. 流式阶段代码块只显示原始文本
+2. 在消息结束后再高亮
+3. 或者使用 `requestIdleCallback` / 延迟任务处理高亮
+
+示例思路：
+
+```tsx
+useEffect(() => {
+  if (isStreaming) return;
+
+  const id = window.requestIdleCallback?.(() => {
+    setShouldHighlight(true);
+  });
+
+  return () => {
+    if (id && window.cancelIdleCallback) {
+      window.cancelIdleCallback(id);
+    }
+  };
+}, [isStreaming]);
+```
+
+如果兼容性要稳一点，也可以简单 `setTimeout` 延迟。
+
+---
+
+## 六、聊天列表必须做虚拟化
+
+如果不是只有一条超长消息，而是整个聊天记录很多条，那必须上虚拟列表。
+
+常见方案：
+
+* `react-window`
+* `react-virtualized`
+* `@tanstack/react-virtual`
+
+### 为什么必要
+
+哪怕单条消息不频繁更新，只要历史消息多、DOM 节点多，浏览器一样会卡。
+
+### 适合聊天场景的建议
+
+优先考虑：
+
+* 只渲染可视区域附近的消息
+* 历史长消息折叠
+* 超长代码块单独懒加载
+
+不过聊天消息高度不固定，虚拟化会比普通列表复杂一点，所以更推荐：
+
+**`@tanstack/react-virtual` + 动态高度测量**
+
+---
+
+## 七、自动滚动不要每次内容变化都强制触发
+
+很多聊天页的卡顿，其实是 `scrollIntoView` 调太勤了。
+
+### 错误做法
+
+```tsx
+useEffect(() => {
+  bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [content]);
+```
+
+这会在每次 token 更新时都触发滚动动画，代价很高。
+
+### 更好的做法
+
+#### 1）节流滚动
+
+只在一段时间内滚一次。
+
+#### 2）只有用户接近底部时才自动滚动
+
+如果用户已经往上翻历史消息，就不要抢滚动条。
+
+```tsx
+function isNearBottom(el: HTMLElement, threshold = 80) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+}
+```
+
+#### 3）流式阶段用瞬时滚动，不要 smooth
+
+`smooth` 在高频更新时很容易造成抖动。
+
+```tsx
+container.scrollTop = container.scrollHeight;
+```
+
+---
+
+## 八、善用 `useDeferredValue` / `useTransition`
+
+如果你既要实时显示文本，又要做重渲染较重的事情，可以把“昂贵渲染”降优先级。
+
+```tsx
+const deferredContent = useDeferredValue(content);
+```
+
+然后让重型 Markdown 渲染使用 `deferredContent`，输入流继续用原始 content。
+
+适合场景：
+
+* 文本在高速增长
+* 渲染器较重
+* 可以接受 UI 稍微“慢半拍”
+
+但要注意：
+
+**它不能替代批量更新，只是辅助优化。**
+真正的大头还是“减少更新频率”。
+
+---
+
+## 九、避免字符串不断拼接带来的额外开销
+
+超长文本如果一直：
+
+```tsx
+prev + chunk
+```
+
+在极端情况下也会有成本，因为字符串是不可变的。
+
+一般中等规模问题不大，但如果你是特别长、特别频繁的流式输出，可以考虑：
+
+* 先存 chunk 数组
+* 定时合并
+* 最终再 join
+
+```tsx
+const chunksRef = useRef<string[]>([]);
+
+const appendToken = (token: string) => {
+  chunksRef.current.push(token);
+};
+```
+
+然后批量：
+
+```tsx
+setContent((prev) => prev + chunksRef.current.join(""));
+chunksRef.current = [];
+```
+
+---
+
+## 十、长消息可以“分段挂载”
+
+对于几万字的大回复，可以不一次性把整条消息全部挂到 DOM。
+
+例如：
+
+* 先渲染前 20 屏
+* 后续内容滚动到附近再挂载
+* 或默认折叠“展开全文”
+
+特别是这些内容很重时更适合：
+
+* 大表格
+* 多个代码块
+* 多张图
+* 富文本结构很多
+
+这个思路本质上是：
+
+**用户先看到最需要的部分，剩下的延迟渲染。**
+
+---
+
+## 十一、组件设计上要避免这些坑
+
+### 1. 不要把整个 `messages` 深拷贝后 setState
+
+这会让 memo 失效。
+
+### 2. 不要在 render 中做重计算
+
+比如：
+
+```tsx
+const html = marked(content);
+const highlighted = heavyFormat(html);
+```
+
+应该放到 `useMemo`，或者更进一步，放到流式结束后再算。
+
+### 3. 不要频繁创建新对象/新函数传给子组件
+
+否则 `React.memo` 也挡不住。
+
+### 4. 不要一边流式输出一边测量大量 DOM
+
+比如反复读 `scrollHeight`、`getBoundingClientRect()`，容易引发回流。
+
+---
+
+## 十二、一个比较实用的组合方案
+
+这是聊天产品里比较稳的一套：
+
+### 流式中
+
+* token 先进 buffer
+* 每 30~50ms 批量更新一次
+* 当前消息单独组件更新
+* 暂时只做纯文本 / 轻量 markdown
+* 自动滚动节流
+* 不做代码高亮
+
+### 流式结束后
+
+* 把当前消息固化进历史消息列表
+* 再执行完整 markdown 解析
+* 空闲时再做代码高亮
+* 长代码块/长表格懒加载
+* 聊天列表使用虚拟化
+
+---
+
+## 十三、一个简化版架构示例
+
+```tsx
+function ChatContainer() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [streamingText, setStreamingText] = useState("");
+  const bufferRef = useRef("");
+  const flushTimerRef = useRef<number | null>(null);
+
+  const flush = () => {
+    if (!bufferRef.current) return;
+    const chunk = bufferRef.current;
+    bufferRef.current = "";
+    setStreamingText((prev) => prev + chunk);
+    flushTimerRef.current = null;
+  };
+
+  const onToken = (token: string) => {
+    bufferRef.current += token;
+
+    if (flushTimerRef.current == null) {
+      flushTimerRef.current = window.setTimeout(flush, 50);
+    }
+  };
+
+  const onDone = () => {
+    flush();
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: "assistant", content: streamingText + bufferRef.current }
+    ]);
+    setStreamingText("");
+    bufferRef.current = "";
+  };
+
+  return (
+    <div className="chat">
+      <MessageList messages={messages} />
+      {!!streamingText && (
+        <AIMessage content={streamingText} isStreaming />
+      )}
+    </div>
+  );
+}
+```
+
+`AIMessage`：
+
+```tsx
+const AIMessage = React.memo(function AIMessage({
+  content,
+  isStreaming,
+}: {
+  content: string;
+  isStreaming: boolean;
+}) {
+  if (isStreaming) {
+    return <pre style={{ whiteSpace: "pre-wrap" }}>{content}</pre>;
+  }
+
+  return <MarkdownRenderer content={content} />;
+});
+```
+
+---
+
+## 十四、优先级最高的优化项
+
+如果你只做 5 件事，优先做这几件：
+
+1. **token 缓冲，别每个 token 都 setState**
+2. **流式消息单独组件更新**
+3. **流式阶段别全量 markdown + 高亮**
+4. **聊天记录做虚拟列表**
+5. **自动滚动节流，且不要频繁 smooth scroll**
+
+这 5 条往往就能解决 80% 的卡顿问题。
+
+---
+
+## 十五、如何判断你到底卡在哪
+
+建议实际做性能定位：
+
+* React DevTools Profiler 看谁在频繁 re-render
+* Chrome Performance 看 scripting / layout / paint
+* 看是否有大量 long task
+* 检查是 React 慢，还是 markdown 解析慢，还是滚动/布局慢
+
+经验上：
+
+* **小量消息但单条超长**：Markdown / 高亮 / 高频 state 更新更容易是主因
+* **很多条聊天记录**：DOM 过多 + 虚拟化缺失更容易是主因
+
+---
+
+## 十六、一句话总结
+
+想让 React 渲染几万字 AI 回复还流畅，关键不是“让 React 更快”，而是：
+
+**不要让 React 和 Markdown 引擎在每个 token 上做全量重活。**
+
+也就是：
+
+**批量更新、局部渲染、延迟重处理、控制 DOM、谨慎滚动。**
+
+如果你愿意，我可以直接给你一套适用于 **React + TypeScript + react-markdown** 的聊天消息高性能实现模板。
